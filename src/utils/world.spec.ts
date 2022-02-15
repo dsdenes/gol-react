@@ -9,15 +9,11 @@ const dataDefault: WorldData = [
 
 describe('World', () => {
   it('should expose initial data', () => {
-    expect(newWorld({ initialData: dataDefault, iterator: defaultIterator }).data).toEqual(
-      dataDefault
-    )
+    expect(newWorld({ data: dataDefault, iterator: defaultIterator }).data).toEqual(dataDefault)
   })
 
   it('should return with the same data if there are no live cell', () => {
-    expect(newWorld({ initialData: dataDefault, iterator: defaultIterator }).data).toEqual(
-      dataDefault
-    )
+    expect(newWorld({ data: dataDefault, iterator: defaultIterator }).data).toEqual(dataDefault)
   })
 
   describe('expandDataCanvas', () => {

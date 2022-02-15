@@ -36,10 +36,12 @@ export function shouldCellLive(data: WorldData, x: number, y: number): boolean {
   return false
 }
 
-export function defaultIterator(data: WorldData): WorldData {
+export function defaultIterator(data: WorldData, boundaries: Boundaries): WorldData {
   return produce(data, (draftData) => {
-    for (let x = 0; x < Object.values(data).length; x++) {
-      for (let y = 0; y < Object.values(data[x]).length; y++) {
+    const numCols = Object.values(data).length
+    const numRows = Object.values(data[boundaries.minX]).length
+    for (let x = boundaries.minX; x < boundaries.minX + numCols; x++) {
+      for (let y = boundaries.minY; y < boundaries.minY + numRows; y++) {
         const nextState = shouldCellLive(data, x, y)
         if (data[x][y] !== nextState) {
           draftData[x][y] = nextState
@@ -132,14 +134,21 @@ export function expandDataCanvas(data: WorldData, boundaries: Boundaries): [Worl
 }
 
 export function newWorld(options: WorldOptions): World {
-  const data: WorldData = options?.initialData ?? []
+  function getDefaultBoundaries(): Boundaries {
+    return { minX: 0, minY: 0 }
+  }
 
-  function nextGeneration(): WorldData {
-    return options.iterator(data)
+  function getNextGeneration(
+    data: WorldData,
+    boundaries: Boundaries = getDefaultBoundaries()
+  ): [WorldData, Boundaries] {
+    const [expandedData, expandedBoundaries] = expandDataCanvas(data, boundaries)
+    return [options.iterator(expandedData, expandedBoundaries), expandedBoundaries]
   }
 
   return {
-    data,
-    nextGeneration
+    data: options.data ?? {},
+    boundaries: options.boundaries ?? getDefaultBoundaries(),
+    getNextGeneration
   }
 }

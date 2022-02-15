@@ -1,15 +1,17 @@
 export type WorldData = Record<number, Record<number, boolean>>
 
-export type Iterator = (data: WorldData) => WorldData
+export type Iterator = (data: WorldData, boundaries: Boundaries) => WorldData
 
 export interface WorldOptions {
-  initialData?: WorldData
+  data?: WorldData
+  boundaries?: Boundaries
   iterator: Iterator
 }
 
 export interface World {
   data: WorldData
-  nextGeneration: () => WorldData
+  boundaries: Boundaries
+  getNextGeneration: (data: WorldData, boundaries: Boundaries) => [WorldData, Boundaries]
 }
 
 export interface Boundaries {
