@@ -1,4 +1,4 @@
-export type WorldData = boolean[][]
+export type WorldData = Record<number, Record<number, boolean>>
 
 export type Iterator = (data: WorldData) => WorldData
 
@@ -10,4 +10,9 @@ export interface WorldOptions {
 export interface World {
   data: WorldData
   nextGeneration: () => WorldData
+}
+
+export interface Boundaries {
+  minX: number
+  minY: number
 }

@@ -1,5 +1,5 @@
-import { defaultIterator, newWorld, shouldCellLive } from './world'
-import { WorldData } from './world.type'
+import { WorldData } from '../types/world.type'
+import { defaultIterator, expandDataCanvas, newWorld, shouldCellLive } from './world'
 
 const dataDefault: WorldData = [
   [false, false, false],
@@ -18,6 +18,133 @@ describe('World', () => {
     expect(newWorld({ initialData: dataDefault, iterator: defaultIterator }).data).toEqual(
       dataDefault
     )
+  })
+
+  describe('expandDataCanvas', () => {
+    it('should return with the same data, if there are no live cells on the edges', () => {
+      const boundaries = { minX: 0, minY: 0 }
+      expect(expandDataCanvas(dataDefault, boundaries)).toEqual([dataDefault, boundaries])
+    })
+    it('should expand the canvas in multiple dimensions if there is only one living cell', () => {
+      const boundaries = { minX: 0, minY: 0 }
+      const data: WorldData = { 0: { 0: true } }
+      expect(expandDataCanvas(data, boundaries)).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "-1": Object {
+      "0": false,
+      "1": false,
+      "2": false,
+    },
+    "0": Object {
+      "-1": false,
+      "0": true,
+      "1": false,
+    },
+    "1": Object {
+      "0": false,
+      "1": false,
+      "2": false,
+    },
+  },
+  Object {
+    "minX": -1,
+    "minY": -1,
+  },
+]
+`)
+    })
+    it('should expand the canvas only in vertical dimensions', () => {
+      const boundaries = { minX: 0, minY: 0 }
+      const data: WorldData = { 0: { 0: false, 1: true, 2: false } }
+      expect(expandDataCanvas(data, boundaries)).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "-1": Object {
+      "0": false,
+      "1": false,
+      "2": false,
+    },
+    "0": Object {
+      "0": false,
+      "1": true,
+      "2": false,
+    },
+    "1": Object {
+      "0": false,
+      "1": false,
+      "2": false,
+    },
+  },
+  Object {
+    "minX": -1,
+    "minY": 0,
+  },
+]
+`)
+    })
+    it('should expand the canvas only in horizontal dimensions', () => {
+      const boundaries = { minX: 0, minY: 0 }
+      const data: WorldData = { 0: { 0: false }, 1: { 0: true }, 2: { 0: false } }
+      expect(expandDataCanvas(data, boundaries)).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "0": Object {
+      "-1": false,
+      "0": false,
+      "1": false,
+    },
+    "1": Object {
+      "-1": false,
+      "0": true,
+      "1": false,
+    },
+    "2": Object {
+      "-1": false,
+      "0": false,
+      "1": false,
+    },
+  },
+  Object {
+    "minX": 0,
+    "minY": -1,
+  },
+]
+`)
+    })
+    it("should not expand the canvas if it's not needed", () => {
+      const boundaries = { minX: 0, minY: 0 }
+      const data: WorldData = {
+        0: { 0: false, 1: false, 2: false },
+        1: { 0: false, 1: true, 2: false },
+        2: { 0: false, 1: false, 2: false }
+      }
+      expect(expandDataCanvas(data, boundaries)).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "0": Object {
+      "0": false,
+      "1": false,
+      "2": false,
+    },
+    "1": Object {
+      "0": false,
+      "1": true,
+      "2": false,
+    },
+    "2": Object {
+      "0": false,
+      "1": false,
+      "2": false,
+    },
+  },
+  Object {
+    "minX": 0,
+    "minY": 0,
+  },
+]
+`)
+    })
   })
 
   describe('shouldCellLive', () => {
