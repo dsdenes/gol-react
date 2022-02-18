@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import styled from 'styled-components'
 import { RendererProps } from '../../types/renderer.type'
 
@@ -41,49 +41,19 @@ export const Cell: React.FC<CellProps> = React.memo((props) => {
   return <CellRender key={`${props.x}:${props.y}`}></CellRender>
 })
 
-// let generationTimer: NodeJS.Timeout
-
-export const ReactRenderer: React.FC<ReactRendererProps> = (props) => {
-  const [world, setWorld] = useState({ data: props.world.data, boundaries: props.world.boundaries })
-
-  // useEffect(() => {
-  //   try {
-  //     clearTimeout(generationTimer)
-  //   } catch {}
-  //   generationTimer = setTimeout(() => {
-  //     setWorld((currentWorld) => {
-  //       const [nextData, nextBoundaries] = props.world.getNextGeneration(
-  //         currentWorld.data,
-  //         currentWorld.boundaries
-  //       )
-  //       return { data: nextData, boundaries: nextBoundaries }
-  //     })
-  //   }, 1000)
-  // }, [props.world, world])
-
-  function handleClickGetNewGeneration() {
-    setWorld((currentWorld) => {
-      const [nextData, nextBoundaries] = props.world.getNextGeneration(
-        currentWorld.data,
-        currentWorld.boundaries
-      )
-      return { data: nextData, boundaries: nextBoundaries }
-    })
-  }
-
+export const ReactRenderer: React.FC<ReactRendererProps> = ({ data, boundaries }) => {
   const rows: JSX.Element[][] = []
-  const numCols = Object.values(world.data).length
-  const numRows = Object.values(world.data[world.boundaries.minX]).length
-  for (let x = world.boundaries.minX; x < world.boundaries.minX + numCols; x++) {
-    for (let y = world.boundaries.minY; y < world.boundaries.minY + numRows; y++) {
+  const numCols = Object.values(data).length
+  const numRows = Object.values(data[boundaries.minX]).length
+  for (let x = boundaries.minX; x < boundaries.minX + numCols; x++) {
+    for (let y = boundaries.minY; y < boundaries.minY + numRows; y++) {
       rows[x] = rows[x] || []
-      rows[x].push(<Cell x={x} y={y} live={world.data[x][y]} key={`${x}:${y}`} />)
+      rows[x].push(<Cell x={x} y={y} live={data[x][y]} key={`${x}:${y}`} />)
     }
   }
 
   return (
     <Container>
-      <button onClick={handleClickGetNewGeneration}>Get new generation</button>
       <Canvas>
         {rows.map((cells, index) => {
           return <Row key={index}>{cells}</Row>

@@ -1,5 +1,6 @@
-import { World } from './world.type'
+import { Boundaries, WorldData } from './world.type'
 
 export interface RendererProps {
-  world: World
+  data: WorldData
+  boundaries: Boundaries
 }
