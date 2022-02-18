@@ -65,17 +65,6 @@ export function defaultIterator(data: WorldData, boundaries: Boundaries): WorldD
   })
 }
 
-function getEmptyCol(numCols: number): Record<number, boolean> {
-  return Array(numCols)
-    .fill(false)
-    .reduce((row, value, index) => {
-      return {
-        ...row,
-        [index]: value
-      }
-    }, {})
-}
-
 function expandWithFirstRow(data: WorldData, boundaries: Boundaries, numCols: number): WorldData {
   return produce(data, (draftData) => {
     for (let x = boundaries.minX; x < boundaries.minX + numCols; x++) {
@@ -99,7 +88,10 @@ function expandWithLastRow(
 
 function expandWithFirstCol(data: WorldData, boundaries: Boundaries, numRows: number): WorldData {
   return produce(data, (draftData) => {
-    draftData[boundaries.minX - 1] = getEmptyCol(numRows)
+    for (let y = boundaries.minY; y < boundaries.minY + numRows; y++) {
+      draftData[boundaries.minX - 1] = draftData[boundaries.minX - 1] || {}
+      draftData[boundaries.minX - 1][y] = false
+    }
   })
 }
 
@@ -110,37 +102,47 @@ function expandWithLastCol(
   numRows: number
 ): WorldData {
   return produce(data, (draftData) => {
-    draftData[boundaries.minX + numCols] = getEmptyCol(numRows)
+    for (let y = boundaries.minY; y < boundaries.minY + numRows; y++) {
+      draftData[boundaries.minX + numCols] = draftData[boundaries.minX + numCols] || {}
+      draftData[boundaries.minX + numCols][y] = false
+    }
   })
 }
 
 // The size of the virtual canvas for the world is unlimited,
 // so on the edges, there will be always dead cells. This function
 // extends the size of this "canvas" by addig dead cells to the edges
-export function expandDataCanvas(data: WorldData, boundaries: Boundaries): [WorldData, Boundaries] {
+export function expandDataCanvas(
+  data: WorldData,
+  boundaries: Boundaries,
+  calls = 0
+): [WorldData, Boundaries] {
+  if (calls > 10) {
+    throw new Error('LOOOP')
+  }
   const numCols = Object.values(data).length
   const numRows = Object.values(data[boundaries.minX]).length
   for (let x = boundaries.minX; x < boundaries.minX + numCols; x++) {
     // If first row contains live cell
     if (data[x][boundaries.minY]) {
       const extendedData = expandWithFirstRow(data, boundaries, numCols)
-      return expandDataCanvas(extendedData, { ...boundaries, minY: boundaries.minY - 1 })
+      return expandDataCanvas(extendedData, { ...boundaries, minY: boundaries.minY - 1 }, ++calls)
     }
     // If last row contains live cell
     if (data[x][boundaries.minY + numRows - 1]) {
       const extendedData = expandWithLastRow(data, boundaries, numCols, numRows)
-      return expandDataCanvas(extendedData, boundaries)
+      return expandDataCanvas(extendedData, boundaries, ++calls)
     }
     for (let y = boundaries.minX; y < boundaries.minY + numRows; y++) {
       // If first col contains live cell
       if (x === boundaries.minX && data[x][y]) {
         const extendedData = expandWithFirstCol(data, boundaries, numRows)
-        return expandDataCanvas(extendedData, { ...boundaries, minX: boundaries.minX - 1 })
+        return expandDataCanvas(extendedData, { ...boundaries, minX: boundaries.minX - 1 }, ++calls)
       }
       // If last col contains live cell
       if (x === boundaries.minX + numCols - 1 && data[x][y]) {
         const extendedData = expandWithLastCol(data, boundaries, numCols, numRows)
-        return expandDataCanvas(extendedData, boundaries)
+        return expandDataCanvas(extendedData, boundaries, ++calls)
       }
     }
   }
