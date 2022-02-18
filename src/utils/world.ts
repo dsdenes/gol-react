@@ -28,6 +28,20 @@ export function getRandomWorldData(canvasSize: number = 10): WorldData {
   }, {})
 }
 
+export function getEmptyWorldData(canvasSize: number = 10): WorldData {
+  return Array.from({ length: canvasSize }, (v, i) => i).reduce((canvas, x) => {
+    return {
+      ...canvas,
+      [x]: Array.from({ length: canvasSize }, (v, i) => i).reduce((rows, y) => {
+        return {
+          ...rows,
+          [y]: false
+        }
+      }, {})
+    }
+  }, {})
+}
+
 export function getNumberOfLiveNeighbours(data: WorldData, x: number, y: number): number {
   const neighbours = getNeighbours(data, x, y)
   return neighbours.filter((cell) => cell).length
