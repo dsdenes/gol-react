@@ -1,19 +1,20 @@
-import { message, Slider } from 'antd'
-import 'antd/dist/antd.css'
+import { Drawer, message, Space, Statistic } from 'antd'
+import 'antd/dist/antd.min.css'
+import Title from 'antd/lib/typography/Title'
 import produce from 'immer'
-import React, { useEffect, useState } from 'react'
-import styled from 'styled-components'
+import React, { useCallback, useEffect, useState } from 'react'
 import './App.css'
-import { ControlBar } from './components/control-bar.component'
+import { ControlButton } from './components/control-button.component'
+import { ControlSlider } from './components/control-slider.component'
+import { config } from './config'
 import { ReactRenderer } from './renderers/react/react-renderer.component'
-import { defaultIterator, getEmptyWorldData, getRandomWorldData, newWorld } from './utils/world'
+import { defaultIterator } from './utils/iterator'
+import { getEmptyWorldData, getRandomWorldData, newWorld } from './utils/world'
 
-let world = newWorld({ data: getEmptyWorldData(20), iterator: defaultIterator })
-const Container = styled.div``
-
-const ControlSlider = styled(Slider)`
-  width: 200px;
-`
+let world = newWorld({
+  data: getEmptyWorldData(config.initialCanvasSize),
+  iterator: defaultIterator
+})
 
 let generationTimer: NodeJS.Timeout
 
@@ -25,7 +26,26 @@ function App() {
   const [generationCount, setGenerationCount] = useState(0)
   const [populationCount, setPopulationCount] = useState(0)
   const [autoPlay, setAutoPlay] = useState(false)
-  const [autoPlayInterval, setAutoPlayInterval] = useState(1000)
+  const [autoPlayInterval, setAutoPlayInterval] = useState(config.defaultPlayInterval)
+
+  useEffect(() => {
+    const numCols = Object.values(currentWorld.data).length
+    const numRows = Object.values(currentWorld.data[currentWorld.boundaries.minX]).length
+    let popCount = 0
+    for (let x = currentWorld.boundaries.minX; x < currentWorld.boundaries.minX + numCols; x++) {
+      for (let y = currentWorld.boundaries.minY; y < currentWorld.boundaries.minY + numRows; y++) {
+        if (currentWorld.data[x][y]) {
+          popCount++
+        }
+      }
+    }
+    setPopulationCount(popCount)
+  }, [
+    generationCount,
+    currentWorld.boundaries.minX,
+    currentWorld.boundaries.minY,
+    currentWorld.data
+  ])
 
   useEffect(() => {
     try {
@@ -45,21 +65,24 @@ function App() {
   }
 
   function handleClickClear() {
-    world = newWorld({ data: getEmptyWorldData(20), iterator: defaultIterator })
+    world = newWorld({
+      data: getEmptyWorldData(config.initialCanvasSize),
+      iterator: defaultIterator
+    })
     setCurrentWorld({ data: world.data, boundaries: world.boundaries })
   }
 
   function handleClickReset() {
     setGenerationCount(0)
     setAutoPlay(false)
-    setAutoPlayInterval(1000)
+    setAutoPlayInterval(config.defaultPlayInterval)
     message.success('State reseted to the 0th generation')
   }
 
   function handleClickRandom() {
-    setAutoPlay(false)
-    setAutoPlayInterval(1000)
     setGenerationCount(0)
+    setAutoPlay(false)
+    setAutoPlayInterval(config.defaultPlayInterval)
     world = newWorld({ data: getRandomWorldData(20), iterator: defaultIterator })
     setCurrentWorld({ data: world.data, boundaries: world.boundaries })
   }
@@ -79,44 +102,55 @@ function App() {
     })
   }
 
-  function handleCellClick(x: number, y: number) {
-    if (generationCount !== 0) {
-      message.error('Cannot manually modify cell state after the 0th iteration.')
-      return
-    }
-    setCurrentWorld((currentWorld) => {
-      return produce(currentWorld, (draftWorld) => {
-        draftWorld.data[x][y] = !currentWorld.data[x][y]
+  const handleCellClick = useCallback(
+    (x: number, y: number) => {
+      if (generationCount !== 0) {
+        message.error('Cannot modify cell state after the 0th iteration.')
+        return
+      }
+      setCurrentWorld((currentWorld) => {
+        return produce(currentWorld, (draftWorld) => {
+          draftWorld.data[x][y] = !currentWorld.data[x][y]
+        })
       })
-    })
-  }
+    },
+    [generationCount]
+  )
 
   return (
-    <Container>
-      <ControlBar>
-        <div>{generationCount}</div>
-        <div>{populationCount}</div>
-        <button onClick={handleClickClear} disabled={autoPlay}>
-          Clear
-        </button>
-        <button onClick={handleClickReset} disabled={autoPlay}>
-          Reset
-        </button>
-        <button onClick={handleClickRandom} disabled={autoPlay}>
-          Random state
-        </button>
-        <button onClick={handleClickGetNewGeneration} disabled={autoPlay}>
-          Get next generation
-        </button>
-        <button onClick={handleClickAutoPlay}>{autoPlay ? 'Stop' : 'Start'}</button>
-        <ControlSlider value={autoPlayInterval} min={100} max={2000} onChange={handleSpeedChange} />
-      </ControlBar>
+    <>
+      <Drawer placement='left' width={270} visible mask={false} closable={false}>
+        <Space direction='vertical' size={20}>
+          <ControlButton onClick={handleClickRandom} disabled={autoPlay}>
+            Reset to radom state
+          </ControlButton>
+          <ControlButton onClick={handleClickGetNewGeneration} disabled={autoPlay}>
+            Get next generation
+          </ControlButton>
+          <ControlButton type='primary' onClick={handleClickAutoPlay}>
+            {autoPlay ? 'Stop' : 'Start'}
+          </ControlButton>
+
+          <Title level={5}>
+            Autoplay wait interval (ms)
+            <ControlSlider value={autoPlayInterval} onChange={handleSpeedChange} />
+          </Title>
+          <Statistic title='Generation' value={generationCount} />
+          <Statistic title='Population' value={populationCount} />
+          <ControlButton onClick={handleClickClear} disabled={autoPlay}>
+            Clear canvas
+          </ControlButton>
+          <ControlButton onClick={handleClickReset} disabled={autoPlay}>
+            Reset to the 0th generation
+          </ControlButton>
+        </Space>
+      </Drawer>
       <ReactRenderer
         onCellClick={handleCellClick}
         data={currentWorld.data}
         boundaries={currentWorld.boundaries}
       />
-    </Container>
+    </>
   )
 }
 

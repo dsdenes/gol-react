@@ -1,13 +1,11 @@
-import React from 'react'
+import React, { useMemo, useState, WheelEvent } from 'react'
 import styled from 'styled-components'
+import { config } from '../../config'
 import { RendererProps } from '../../types/renderer.type'
-import { Cell } from './cell.component'
+import { Cell } from './components/cell.component'
+import { Row } from './components/row.component'
 
-interface ReactRendererProps extends RendererProps {}
-
-const Container = styled.div``
-
-const Canvas = styled.div`
+const Container = styled.div`
   width: 100vw;
   height: 100vh;
   display: flex;
@@ -15,26 +13,56 @@ const Canvas = styled.div`
   align-items: center;
 `
 
-export const Row: React.FC = React.memo((props) => {
-  return <div>{props.children}</div>
-})
+const Canvas = styled.div`
+  display: flex;
+`
 
-export const ReactRenderer: React.FC<ReactRendererProps> = ({ data, boundaries, onCellClick }) => {
-  const rows: JSX.Element[][] = []
+export const ReactRenderer: React.FC<RendererProps> = ({ data, boundaries, onCellClick }) => {
   const numCols = Object.values(data).length
   const numRows = Object.values(data[boundaries.minX]).length
-  for (let x = boundaries.minX; x < boundaries.minX + numCols; x++) {
-    for (let y = boundaries.minY; y < boundaries.minY + numRows; y++) {
-      rows[x] = rows[x] || []
-      rows[x].push(<Cell onClick={onCellClick} x={x} y={y} live={data[x][y]} key={`${x}:${y}`} />)
-    }
+  const [zoom, setZoom] = useState(1.0)
+
+  function handleWheel(e: WheelEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setZoom((currentZoom) => currentZoom - e.deltaY / 500)
+    return false
   }
+
+  const rows = useMemo(() => {
+    let rows: {
+      key: string
+      cells: JSX.Element[]
+    }[] = []
+
+    let rowIndex = 0
+
+    for (let x = boundaries.minX; x < boundaries.minX + numCols; x++) {
+      for (let y = boundaries.minY; y < boundaries.minY + numRows; y++) {
+        rows[rowIndex] = rows[rowIndex] ?? {
+          cells: [],
+          key: `${x}`
+        }
+        rows[rowIndex].cells.push(
+          <Cell onClick={onCellClick} x={x} y={y} live={data[x][y]} key={`${x}:${y}`} />
+        )
+      }
+      rowIndex++
+    }
+    return rows
+  }, [boundaries.minX, boundaries.minY, numCols, numRows, onCellClick, data])
 
   return (
     <Container>
-      <Canvas>
-        {rows.map((cells, index) => {
-          return <Row key={index}>{cells}</Row>
+      <Canvas
+        onWheel={handleWheel}
+        style={{
+          marginTop: (numRows + boundaries.minY - config.initialCanvasSize) * config.cellSize,
+          marginLeft: (numCols + boundaries.minX - config.initialCanvasSize) * config.cellSize,
+          transform: `scale(${zoom})`
+        }}
+      >
+        {rows.map((row) => {
+          return <Row key={row.key}>{row.cells}</Row>
         })}
       </Canvas>
     </Container>
