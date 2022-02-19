@@ -1,12 +1,7 @@
 import { WorldData } from '../types/world.type'
-import {
-  defaultIterator,
-  expandDataCanvas,
-  getRandomWorldData,
-  newWorld,
-  shouldCellLive
-} from './world'
-
+import { expandDataCanvas } from './expand-data-canvas'
+import { defaultIterator, shouldCellLive } from './iterator'
+import { newWorld } from './world'
 const dataDefault: WorldData = [
   [false, false, false],
   [false, false, false],
@@ -34,9 +29,9 @@ describe('World', () => {
 Array [
   Object {
     "-1": Object {
+      "-1": false,
       "0": false,
       "1": false,
-      "2": false,
     },
     "0": Object {
       "-1": false,
@@ -44,9 +39,9 @@ Array [
       "1": false,
     },
     "1": Object {
+      "-1": false,
       "0": false,
       "1": false,
-      "2": false,
     },
   },
   Object {
@@ -146,14 +141,6 @@ Array [
   },
 ]
 `)
-    })
-
-    test.each(
-      Array(10)
-        .fill(1)
-        .map(() => [getRandomWorldData(10)])
-    )('cases', (worldData) => {
-      expect(expandDataCanvas(worldData, { minX: 0, minY: 0 })).not.toThrow()
     })
   })
 

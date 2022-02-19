@@ -1,4 +1,5 @@
-import { expandDataCanvas, getRandomWorldData } from '../utils/world'
+import { expandDataCanvas } from '../utils/expand-data-canvas'
+import { getRandomWorldData } from '../utils/world'
 
 for (let worldData of Array(100)
   .fill(1)
